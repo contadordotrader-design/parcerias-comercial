@@ -1,37 +1,4 @@
-﻿"use client";
-
-import { Button } from "@/components/ui/Button";
-import { Select } from "@/components/ui/Field";
-import { TaskFormModal } from "@/components/tasks/TaskFormModal";
-import { TaskTable } from "@/components/tasks/TaskTable";
-import { CategoryOption, CollaboratorOption, PartnerOption, TaskListItem } from "@/components/tasks/types";
-import { Plus, Search } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
-
-type Setor = TaskListItem["setor"];
-
-export function TasksBoard({
-  title,
-  subtitle,
-  fixedSetor,
-  onlyMine = false,
-  showSetorColumn = true,
-  showPrazoQuickFilters = false,
-  showCategoryFilter = false,
-}: {
-  title: string;
-  subtitle?: string;
-  fixedSetor?: Setor;
-  onlyMine?: boolean;
-  showSetorColumn?: boolean;
-  showPrazoQuickFilters?: boolean;
-  showCategoryFilter?: boolean;
-}) {
-  const [tasks, setTasks] = useState<TaskListItem[]>([]);
-  const [colaboradores, setColaboradores] =
-New-Item -ItemType Directory -Force -Path (Split-Path 'src\app\api\tasks\route.ts') | Out-Null
-@'
-import { requireUser } from "@/lib/api-auth";
+﻿import { requireUser } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { taskInputSchema } from "@/lib/validation/task";
 import { Prisma, PrioridadeTarefa, Setor, StatusTarefa } from "@prisma/client";
@@ -138,4 +105,3 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json(task, { status: 201 });
 }
-
