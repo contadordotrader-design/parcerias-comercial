@@ -1,0 +1,439 @@
+// ============================================================
+// CDT Tarefas — Schema do banco de dados (PostgreSQL + Prisma)
+// Sistema de gestão de tarefas Comercial e Parcerias — Grupo CDT
+// ============================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------------------------------------------------
+// ENUMS
+// ------------------------------------------------------------
+
+enum Setor {
+  COMERCIAL
+  PARCERIAS
+  DEMANDAS_RECEBIDAS
+  GERAL
+}
+
+enum StatusTarefa {
+  PENDENTE
+  EM_ANDAMENTO
+  AGUARDANDO_TERCEIRO
+  CONCLUIDO
+  CANCELADO
+}
+
+enum PrioridadeTarefa {
+  ALTA
+  MEDIA
+  BAIXA
+}
+
+enum PerfilAcesso {
+  ADMINISTRADOR
+  GESTOR
+  COLABORADOR
+}
+
+enum StatusColaborador {
+  ATIVO
+  INATIVO
+}
+
+enum TipoParceiro {
+  INFLUENCIADOR
+  CONTADOR
+  CONSULTOR
+  ASSESSOR
+  EDUCADOR
+  OUTRO
+}
+
+enum SegmentoParceiro {
+  B3
+  CRIPTO
+  INTERNACIONAL
+  FOREX
+  MESA_PROPRIETARIA
+  EMPRESARIAL
+  OUTRO
+}
+
+enum StatusParceiro {
+  PROSPECT
+  EM_CONTATO
+  NEGOCIACAO
+  ATIVO
+  INATIVO
+}
+
+enum StatusAcaoParceria {
+  PLANEJADA
+  EM_ANDAMENTO
+  CONCLUIDA
+  CANCELADA
+}
+
+enum TipoAcaoParceria {
+  LIVE
+  PODCAST
+  MASTERCLASS
+  EVENTO
+  CAMPANHA
+  CONTEUDO
+  DIVULGACAO
+  MATERIAL_CONJUNTO
+  OUTRO
+}
+
+enum StatusMaterial {
+  SOLICITADO
+  EM_CRIACAO
+  REVISAO
+  AGUARDANDO_PARCEIRO
+  FINALIZADO
+}
+
+enum StatusComissao {
+  AGUARDANDO_PAGAMENTO_CLIENTE
+  AGUARDANDO_CALCULO
+  AGUARDANDO_PAGAMENTO
+  PAGO
+}
+
+enum TipoNotificacao {
+  TAREFA_ATRIBUIDA
+  PRAZO_PROXIMO
+  TAREFA_ATRASADA
+  MENCAO
+  COMENTARIO
+  RESPONSAVEL_ALTERADO
+}
+
+// ------------------------------------------------------------
+// USUÁRIOS / COLABORADORES
+// ------------------------------------------------------------
+
+model User {
+  id            String            @id @default(uuid())
+  nome          String
+  email         String            @unique
+  senhaHash     String
+  telefone      String?
+  cargo         String?
+  setor         Setor?
+  foto          String?
+  perfil        PerfilAcesso      @default(COLABORADOR)
+  status        StatusColaborador @default(ATIVO)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  tarefasCriadas      Task[]             @relation("TarefasCriadas")
+  tarefasResponsavel   Task[]             @relation("TarefasResponsavel")
+  comentarios          TaskComment[]
+  historico            TaskHistory[]
+  notificacoes         Notification[]
+  parceriasResponsavel Partner[]          @relation("ParceriasResponsavel")
+  acoesResponsavel     PartnerAction[]    @relation("AcoesResponsavel")
+  materiaisResponsavel PartnerMaterial[]  @relation("MateriaisResponsavel")
+  subtarefasResponsavel Subtask[]         @relation("SubtarefasResponsavel")
+
+  @@index([setor])
+  @@map("users")
+}
+
+// ------------------------------------------------------------
+// CATEGORIAS / TAGS (configuráveis)
+// ------------------------------------------------------------
+
+model Category {
+  id        String   @id @default(uuid())
+  nome      String
+  setor     Setor?
+  createdAt DateTime @default(now())
+
+  tasks Task[]
+
+  @@map("categories")
+}
+
+model Tag {
+  id    String @id @default(uuid())
+  nome  String @unique
+
+  tasks TaskTag[]
+
+  @@map("tags")
+}
+
+model TaskTag {
+  taskId String
+  tagId  String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, tagId])
+  @@map("task_tags")
+}
+
+// ------------------------------------------------------------
+// TAREFAS
+// ------------------------------------------------------------
+
+model Task {
+  id             String            @id @default(uuid())
+  titulo         String
+  descricao      String?
+  setor          Setor             @default(GERAL)
+  categoriaId    String?
+  categoria      Category?         @relation(fields: [categoriaId], references: [id])
+  responsavelId  String?
+  responsavel    User?             @relation("TarefasResponsavel", fields: [responsavelId], references: [id])
+  criadorId      String
+  criador        User              @relation("TarefasCriadas", fields: [criadorId], references: [id])
+  prioridade     PrioridadeTarefa  @default(MEDIA)
+  status         StatusTarefa      @default(PENDENTE)
+  dataInicio     DateTime?
+  prazo          DateTime?
+  dataConclusao  DateTime?
+  parceiroId     String?
+  parceiro       Partner?          @relation(fields: [parceiroId], references: [id])
+  clienteNome    String?
+  observacoes    String?
+  proximaAcao    String?
+  dependeDeId    String?
+  dependeDe      Task?             @relation("Dependencia", fields: [dependeDeId], references: [id])
+  dependentes    Task[]            @relation("Dependencia")
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  subtarefas   Subtask[]
+  checklist    ChecklistItem[]
+  comentarios  TaskComment[]
+  historico    TaskHistory[]
+  anexos       TaskAttachment[]
+  tags         TaskTag[]
+  acao         PartnerAction?    @relation(fields: [acaoId], references: [id])
+  acaoId       String?
+  reuniao      PartnerMeeting?   @relation(fields: [reuniaoId], references: [id])
+  reuniaoId    String?
+
+  @@index([setor, status])
+  @@index([responsavelId])
+  @@index([prazo])
+  @@map("tasks")
+}
+
+model Subtask {
+  id            String       @id @default(uuid())
+  taskId        String
+  task          Task         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  titulo        String
+  responsavelId String?
+  responsavel   User?        @relation("SubtarefasResponsavel", fields: [responsavelId], references: [id])
+  status        StatusTarefa @default(PENDENTE)
+  prazo         DateTime?
+  concluida     Boolean      @default(false)
+  ordem         Int          @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([taskId])
+  @@map("subtasks")
+}
+
+model ChecklistItem {
+  id        String   @id @default(uuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  descricao String
+  concluido Boolean  @default(false)
+  ordem     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([taskId])
+  @@map("checklist_items")
+}
+
+model TaskComment {
+  id        String   @id @default(uuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  autorId   String
+  autor     User     @relation(fields: [autorId], references: [id])
+  comentario String
+  createdAt DateTime @default(now())
+
+  @@index([taskId])
+  @@map("task_comments")
+}
+
+model TaskHistory {
+  id          String   @id @default(uuid())
+  taskId      String
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  autorId     String
+  autor       User     @relation(fields: [autorId], references: [id])
+  acao        String   // ex: "criou a tarefa", "alterou status de X para Y"
+  campo       String?  // campo alterado, quando aplicável
+  valorAntigo String?
+  valorNovo   String?
+  createdAt   DateTime @default(now())
+
+  @@index([taskId])
+  @@map("task_history")
+}
+
+model TaskAttachment {
+  id         String   @id @default(uuid())
+  taskId     String
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  nomeArquivo String
+  url        String   // caminho local ou URL de storage externo (preparado para integração futura)
+  tipo       String?
+  tamanho    Int?
+  createdAt  DateTime @default(now())
+
+  @@index([taskId])
+  @@map("task_attachments")
+}
+
+// ------------------------------------------------------------
+// PARCERIAS
+// ------------------------------------------------------------
+
+model Partner {
+  id                String           @id @default(uuid())
+  nome              String
+  empresa           String?
+  tipo              TipoParceiro     @default(OUTRO)
+  segmento          SegmentoParceiro @default(OUTRO)
+  telefone          String?
+  whatsapp          String?
+  email             String?
+  instagram         String?
+  site              String?
+  status            StatusParceiro   @default(PROSPECT)
+  responsavelId     String?
+  responsavel       User?            @relation("ParceriasResponsavel", fields: [responsavelId], references: [id])
+  dataInicio        DateTime?
+  proximaAcao       String?
+  observacoes       String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  tarefas   Task[]
+  acoes     PartnerAction[]
+  reunioes  PartnerMeeting[]
+  materiais PartnerMaterial[]
+  comissoes Commission[]
+
+  @@index([status])
+  @@index([tipo, segmento])
+  @@map("partners")
+}
+
+model PartnerAction {
+  id            String             @id @default(uuid())
+  nome          String
+  tipo          TipoAcaoParceria   @default(OUTRO)
+  parceiroId    String
+  parceiro      Partner            @relation(fields: [parceiroId], references: [id], onDelete: Cascade)
+  responsavelId String?
+  responsavel   User?              @relation("AcoesResponsavel", fields: [responsavelId], references: [id])
+  data          DateTime?
+  status        StatusAcaoParceria @default(PLANEJADA)
+  descricao     String?
+  resultado     String?
+  proximoPasso  String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  tarefas Task[]
+
+  @@index([parceiroId])
+  @@map("partner_actions")
+}
+
+model PartnerMeeting {
+  id            String   @id @default(uuid())
+  parceiroId    String
+  parceiro      Partner  @relation(fields: [parceiroId], references: [id], onDelete: Cascade)
+  data          DateTime
+  participantes String?
+  objetivo      String?
+  resumo        String?
+  decisoes      String?
+  pendencias    String?
+  proximosPassos String?
+  createdAt     DateTime @default(now())
+
+  tarefasGeradas Task[]
+
+  @@index([parceiroId])
+  @@map("partner_meetings")
+}
+
+model PartnerMaterial {
+  id            String         @id @default(uuid())
+  nome          String
+  parceiroId    String
+  parceiro      Partner        @relation(fields: [parceiroId], references: [id], onDelete: Cascade)
+  responsavelId String?
+  responsavel   User?          @relation("MateriaisResponsavel", fields: [responsavelId], references: [id])
+  tipo          String?
+  status        StatusMaterial @default(SOLICITADO)
+  prazo         DateTime?
+  observacao    String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([parceiroId])
+  @@map("partner_materials")
+}
+
+model Commission {
+  id            String          @id @default(uuid())
+  parceiroId    String
+  parceiro      Partner         @relation(fields: [parceiroId], references: [id], onDelete: Cascade)
+  clienteNome   String
+  servico       String
+  valorVenda    Decimal         @db.Decimal(12, 2)
+  percentual    Decimal?        @db.Decimal(5, 2)
+  valorComissao Decimal         @db.Decimal(12, 2)
+  data          DateTime
+  status        StatusComissao  @default(AGUARDANDO_CALCULO)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([parceiroId])
+  @@index([status])
+  @@map("commissions")
+}
+
+// ------------------------------------------------------------
+// NOTIFICAÇÕES
+// ------------------------------------------------------------
+
+model Notification {
+  id        String          @id @default(uuid())
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tipo      TipoNotificacao
+  mensagem  String
+  link      String?
+  lida      Boolean         @default(false)
+  createdAt DateTime        @default(now())
+
+  @@index([userId, lida])
+  @@map("notifications")
+}
