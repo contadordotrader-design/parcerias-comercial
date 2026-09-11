@@ -1,10 +1,10 @@
-import { z } from "zod";
+﻿import { z } from "zod";
 
 export const taskInputSchema = z.object({
   titulo: z.string().min(1, "Informe um título."),
   descricao: z.string().optional().nullable(),
   setor: z.enum(["COMERCIAL", "PARCERIAS", "DEMANDAS_RECEBIDAS", "GERAL"]),
-  categoriaId: z.string().uuid().optional().nullable(),
+  categoriaId: z.string().min(1).optional().nullable(),
   responsavelId: z.string().uuid().optional().nullable(),
   prioridade: z.enum(["ALTA", "MEDIA", "BAIXA"]).default("MEDIA"),
   status: z
@@ -19,3 +19,4 @@ export const taskInputSchema = z.object({
 });
 
 export type TaskInput = z.infer<typeof taskInputSchema>;
+
