@@ -1,12 +1,8 @@
-import type { NextAuthConfig } from "next-auth";
+﻿import type { NextAuthConfig } from "next-auth";
 import { NextResponse } from "next/server";
 
-// Configuração "leve" da autenticação, sem provedores nem dependências
-// de Node.js (bcrypt, Prisma). É a única parte carregada pelo middleware,
-// que roda no runtime Edge do Next.js e não suporta essas bibliotecas.
-// O restante (Credentials provider, bcrypt, Prisma) fica em lib/auth.ts,
-// usado pelas rotas de API e pelos componentes de servidor.
 export const authConfig: NextAuthConfig = {
+  trustHost: true,
   pages: {
     signIn: "/login",
   },
