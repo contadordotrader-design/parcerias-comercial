@@ -1,9 +1,10 @@
-"use client";
+﻿"use client";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { StatusBadge, PriorityBadge } from "@/components/tasks/Badges";
 import { PartnerFormModal } from "@/components/partners/PartnerFormModal";
+import { MeetingFormModal } from "@/components/meetings/MeetingFormModal";
 import {
   SEGMENTO_LABELS,
   STATUS_PARCEIRO_LABELS,
@@ -11,7 +12,7 @@ import {
   TIPO_PARCEIRO_LABELS,
 } from "@/components/partners/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { ArrowLeft, Pencil, Plus } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -69,6 +70,7 @@ export default function ParceiroDetailPage() {
   const [partner, setPartner] = useState<PartnerDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
+  const [meetingOpen, setMeetingOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -170,7 +172,18 @@ export default function ParceiroDetailPage() {
           )}
         </Section>
 
-        <Section title="Reuniões">
+        <Section
+          title="Reuniões"
+          action={
+            <button
+              onClick={() => setMeetingOpen(true)}
+              className="flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-800"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Nova reunião
+            </button>
+          }
+        >
           {partner.reunioes.length === 0 ? (
             <EmptyRow text="Nenhuma reunião registrada." />
           ) : (
@@ -235,6 +248,18 @@ export default function ParceiroDetailPage() {
           instagram: partner.instagram,
         }}
       />
+
+      <MeetingFormModal
+        open={meetingOpen}
+        onClose={() => setMeetingOpen(false)}
+        onSaved={(tarefasCriadas) => {
+          load();
+          if (tarefasCriadas > 0) {
+            alert(`Reunião salva! ${tarefasCriadas} tarefa(s) criada(s) a partir dos próximos passos.`);
+          }
+        }}
+        parceiroId={partner.id}
+      />
     </div>
   );
 }
@@ -248,10 +273,21 @@ function Info({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  children,
+  action,
+}: {
+  title: string;
+  children: React.ReactNode;
+  action?: React.ReactNode;
+}) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5">
-      <h3 className="mb-1 text-sm font-semibold text-slate-700">{title}</h3>
+      <div className="mb-1 flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-slate-700">{title}</h3>
+        {action}
+      </div>
       {children}
     </div>
   );
@@ -260,3 +296,4 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function EmptyRow({ text }: { text: string }) {
   return <p className="py-6 text-center text-sm text-slate-400">{text}</p>;
 }
+

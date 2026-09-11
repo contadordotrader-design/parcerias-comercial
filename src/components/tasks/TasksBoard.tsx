@@ -5,7 +5,8 @@ import { Select } from "@/components/ui/Field";
 import { TaskFormModal } from "@/components/tasks/TaskFormModal";
 import { TaskTable } from "@/components/tasks/TaskTable";
 import { CategoryOption, CollaboratorOption, PartnerOption, TaskListItem } from "@/components/tasks/types";
-import { Plus, Search } from "lucide-react";
+import { KanbanBoard } from "@/components/kanban/KanbanBoard";
+import { LayoutList, KanbanSquare, Plus, Search } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 type Setor = TaskListItem["setor"];
@@ -40,6 +41,7 @@ export function TasksBoard({
   const [prazoFiltro, setPrazoFiltro] = useState("");
   const [categoriaId, setCategoriaId] = useState("");
   const [busca, setBusca] = useState("");
+  const [visao, setVisao] = useState<"lista" | "kanban">("lista");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -82,6 +84,16 @@ export function TasksBoard({
     if (res.ok) load();
   }
 
+  async function handleStatusChange(task: TaskListItem, novoStatus: TaskListItem["status"]) {
+    setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status: novoStatus } : t)));
+    const res = await fetch(`/api/tasks/${task.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: novoStatus }),
+    });
+    if (!res.ok) load();
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -89,15 +101,37 @@ export function TasksBoard({
           <h1 className="text-xl font-semibold text-slate-900">{title}</h1>
           {subtitle && <p className="text-sm text-slate-500">{subtitle}</p>}
         </div>
-        <Button
-          onClick={() => {
-            setEditing(null);
-            setModalOpen(true);
-          }}
-        >
-          <Plus className="h-4 w-4" />
-          Nova tarefa
-        </Button>
+        <div className="flex items-center gap-2">
+          <div className="flex rounded-lg border border-slate-200 bg-white p-0.5">
+            <button
+              onClick={() => setVisao("lista")}
+              className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium ${
+                visao === "lista" ? "bg-slate-900 text-white" : "text-slate-500 hover:bg-slate-100"
+              }`}
+            >
+              <LayoutList className="h-3.5 w-3.5" />
+              Lista
+            </button>
+            <button
+              onClick={() => setVisao("kanban")}
+              className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium ${
+                visao === "kanban" ? "bg-slate-900 text-white" : "text-slate-500 hover:bg-slate-100"
+              }`}
+            >
+              <KanbanSquare className="h-3.5 w-3.5" />
+              Kanban
+            </button>
+          </div>
+          <Button
+            onClick={() => {
+              setEditing(null);
+              setModalOpen(true);
+            }}
+          >
+            <Plus className="h-4 w-4" />
+            Nova tarefa
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-3">
@@ -152,6 +186,15 @@ export function TasksBoard({
         <div className="rounded-xl border border-slate-200 bg-white py-16 text-center text-sm text-slate-400">
           Carregando tarefas...
         </div>
+      ) : visao === "kanban" ? (
+        <KanbanBoard
+          tasks={tasks}
+          onEdit={(task) => {
+            setEditing(task);
+            setModalOpen(true);
+          }}
+          onStatusChange={handleStatusChange}
+        />
       ) : (
         <TaskTable
           tasks={tasks}
