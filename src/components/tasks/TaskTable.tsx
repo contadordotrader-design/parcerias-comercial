@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { StatusBadge, PriorityBadge } from "@/components/tasks/Badges";
 import { TaskListItem } from "@/components/tasks/types";
@@ -46,6 +46,9 @@ export function TaskTable({
               <tr key={task.id} className="hover:bg-slate-50/60">
                 <td className="max-w-xs px-4 py-3">
                   <p className="truncate font-medium text-slate-800">{task.titulo}</p>
+                  {task.categoria && (
+                    <p className="text-xs text-slate-400">{task.categoria.nome}</p>
+                  )}
                   {task.subtarefas.length > 0 && (
                     <p className="text-xs text-slate-400">
                       {subConcluidas} de {task.subtarefas.length} subtarefas concluídas
@@ -91,3 +94,4 @@ export function TaskTable({
     </div>
   );
 }
+

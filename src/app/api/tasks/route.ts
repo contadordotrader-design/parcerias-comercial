@@ -1,3 +1,36 @@
+﻿"use client";
+
+import { Button } from "@/components/ui/Button";
+import { Select } from "@/components/ui/Field";
+import { TaskFormModal } from "@/components/tasks/TaskFormModal";
+import { TaskTable } from "@/components/tasks/TaskTable";
+import { CategoryOption, CollaboratorOption, PartnerOption, TaskListItem } from "@/components/tasks/types";
+import { Plus, Search } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+
+type Setor = TaskListItem["setor"];
+
+export function TasksBoard({
+  title,
+  subtitle,
+  fixedSetor,
+  onlyMine = false,
+  showSetorColumn = true,
+  showPrazoQuickFilters = false,
+  showCategoryFilter = false,
+}: {
+  title: string;
+  subtitle?: string;
+  fixedSetor?: Setor;
+  onlyMine?: boolean;
+  showSetorColumn?: boolean;
+  showPrazoQuickFilters?: boolean;
+  showCategoryFilter?: boolean;
+}) {
+  const [tasks, setTasks] = useState<TaskListItem[]>([]);
+  const [colaboradores, setColaboradores] =
+New-Item -ItemType Directory -Force -Path (Split-Path 'src\app\api\tasks\route.ts') | Out-Null
+@'
 import { requireUser } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { taskInputSchema } from "@/lib/validation/task";
@@ -13,6 +46,7 @@ export async function GET(req: NextRequest) {
   const status = searchParams.get("status");
   const prioridade = searchParams.get("prioridade");
   const responsavelId = searchParams.get("responsavelId");
+  const categoriaId = searchParams.get("categoriaId");
   const mine = searchParams.get("mine");
   const search = searchParams.get("q");
   const prazoFiltro = searchParams.get("prazo"); // hoje | semana | atrasadas
@@ -23,6 +57,7 @@ export async function GET(req: NextRequest) {
   if (status) where.status = status as StatusTarefa;
   if (prioridade) where.prioridade = prioridade as PrioridadeTarefa;
   if (responsavelId) where.responsavelId = responsavelId;
+  if (categoriaId) where.categoriaId = categoriaId;
   if (mine === "1") where.responsavelId = user!.id;
   if (search) {
     where.titulo = { contains: search, mode: "insensitive" };
@@ -103,3 +138,4 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json(task, { status: 201 });
 }
+

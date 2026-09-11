@@ -1,10 +1,10 @@
-"use client";
+﻿"use client";
 
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Field";
 import { TaskFormModal } from "@/components/tasks/TaskFormModal";
 import { TaskTable } from "@/components/tasks/TaskTable";
-import { CollaboratorOption, PartnerOption, TaskListItem } from "@/components/tasks/types";
+import { CategoryOption, CollaboratorOption, PartnerOption, TaskListItem } from "@/components/tasks/types";
 import { Plus, Search } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
@@ -17,6 +17,7 @@ export function TasksBoard({
   onlyMine = false,
   showSetorColumn = true,
   showPrazoQuickFilters = false,
+  showCategoryFilter = false,
 }: {
   title: string;
   subtitle?: string;
@@ -24,10 +25,12 @@ export function TasksBoard({
   onlyMine?: boolean;
   showSetorColumn?: boolean;
   showPrazoQuickFilters?: boolean;
+  showCategoryFilter?: boolean;
 }) {
   const [tasks, setTasks] = useState<TaskListItem[]>([]);
   const [colaboradores, setColaboradores] = useState<CollaboratorOption[]>([]);
   const [parceiros, setParceiros] = useState<PartnerOption[]>([]);
+  const [categorias, setCategorias] = useState<CategoryOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<TaskListItem | null>(null);
@@ -35,6 +38,7 @@ export function TasksBoard({
   const [status, setStatus] = useState("");
   const [prioridade, setPrioridade] = useState("");
   const [prazoFiltro, setPrazoFiltro] = useState("");
+  const [categoriaId, setCategoriaId] = useState("");
   const [busca, setBusca] = useState("");
 
   const load = useCallback(async () => {
@@ -45,12 +49,16 @@ export function TasksBoard({
     if (status) params.set("status", status);
     if (prioridade) params.set("prioridade", prioridade);
     if (prazoFiltro) params.set("prazo", prazoFiltro);
+    if (categoriaId) params.set("categoriaId", categoriaId);
     if (busca) params.set("q", busca);
 
-    const [tasksRes, usersRes, partnersRes] = await Promise.all([
+    const categoryParams = fixedSetor ? `?setor=${fixedSetor}` : "";
+
+    const [tasksRes, usersRes, partnersRes, categoriesRes] = await Promise.all([
       fetch(`/api/tasks?${params.toString()}`),
       fetch("/api/users"),
       fetch("/api/partners"),
+      fetch(`/api/categories${categoryParams}`),
     ]);
 
     if (tasksRes.ok) setTasks(await tasksRes.json());
@@ -59,9 +67,10 @@ export function TasksBoard({
       setColaboradores(users.filter((u: { status: string }) => u.status === "ATIVO"));
     }
     if (partnersRes.ok) setParceiros(await partnersRes.json());
+    if (categoriesRes.ok) setCategorias(await categoriesRes.json());
 
     setLoading(false);
-  }, [fixedSetor, onlyMine, status, prioridade, prazoFiltro, busca]);
+  }, [fixedSetor, onlyMine, status, prioridade, prazoFiltro, categoriaId, busca]);
 
   useEffect(() => {
     load();
@@ -126,6 +135,17 @@ export function TasksBoard({
           <option value="MEDIA">Média</option>
           <option value="BAIXA">Baixa</option>
         </Select>
+
+        {showCategoryFilter && (
+          <Select value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)} className="w-auto">
+            <option value="">Todas as categorias</option>
+            {categorias.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nome}
+              </option>
+            ))}
+          </Select>
+        )}
       </div>
 
       {loading ? (
@@ -156,3 +176,4 @@ export function TasksBoard({
     </div>
   );
 }
+

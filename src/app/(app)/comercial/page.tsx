@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { TasksBoard } from "@/components/tasks/TasksBoard";
 
@@ -9,6 +9,8 @@ export default function ComercialPage() {
       subtitle="Atendimento, follow-up, prospecção e base de clientes."
       fixedSetor="COMERCIAL"
       showSetorColumn={false}
+      showCategoryFilter
     />
   );
 }
+

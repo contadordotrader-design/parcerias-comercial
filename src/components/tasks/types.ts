@@ -1,4 +1,4 @@
-export type TaskListItem = {
+﻿export type TaskListItem = {
   id: string;
   titulo: string;
   descricao: string | null;
@@ -30,3 +30,9 @@ export type PartnerOption = {
   id: string;
   nome: string;
 };
+
+export type CategoryOption = {
+  id: string;
+  nome: string;
+};
+

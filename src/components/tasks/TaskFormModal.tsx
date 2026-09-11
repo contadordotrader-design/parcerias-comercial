@@ -1,9 +1,15 @@
-"use client";
+﻿"use client";
 
 import { Button } from "@/components/ui/Button";
 import { Field, Input, Select, Textarea } from "@/components/ui/Field";
 import { Modal } from "@/components/ui/Modal";
-import { CollaboratorOption, PartnerOption, TaskListItem } from "@/components/tasks/types";
+import {
+  CategoryOption,
+  CollaboratorOption,
+  PartnerOption,
+  TaskListItem,
+} from "@/components/tasks/types";
+import { Plus } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 
 type Setor = TaskListItem["setor"];
@@ -30,6 +36,10 @@ export function TaskFormModal({
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [setor, setSetor] = useState<Setor>(defaultSetor ?? "GERAL");
+  const [categoriaId, setCategoriaId] = useState("");
+  const [categorias, setCategorias] = useState<CategoryOption[]>([]);
+  const [novaCategoriaAberta, setNovaCategoriaAberta] = useState(false);
+  const [novaCategoriaNome, setNovaCategoriaNome] = useState("");
   const [responsavelId, setResponsavelId] = useState("");
   const [prioridade, setPrioridade] = useState<TaskListItem["prioridade"]>("MEDIA");
   const [status, setStatus] = useState<TaskListItem["status"]>("PENDENTE");
@@ -47,6 +57,7 @@ export function TaskFormModal({
       setTitulo(task.titulo);
       setDescricao(task.descricao ?? "");
       setSetor(task.setor);
+      setCategoriaId(task.categoriaId ?? "");
       setResponsavelId(task.responsavelId ?? "");
       setPrioridade(task.prioridade);
       setStatus(task.status);
@@ -59,6 +70,7 @@ export function TaskFormModal({
       setTitulo("");
       setDescricao("");
       setSetor(defaultSetor ?? "GERAL");
+      setCategoriaId("");
       setResponsavelId("");
       setPrioridade("MEDIA");
       setStatus("PENDENTE");
@@ -68,8 +80,34 @@ export function TaskFormModal({
       setProximaAcao("");
       setObservacoes("");
     }
+    setNovaCategoriaAberta(false);
+    setNovaCategoriaNome("");
     setErro(null);
   }, [open, task, defaultSetor]);
+
+  useEffect(() => {
+    if (!open) return;
+    fetch(`/api/categories?setor=${setor}`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => setCategorias(data))
+      .catch(() => setCategorias([]));
+  }, [open, setor]);
+
+  async function handleCriarCategoria() {
+    if (!novaCategoriaNome.trim()) return;
+    const res = await fetch("/api/categories", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome: novaCategoriaNome.trim(), setor }),
+    });
+    if (res.ok) {
+      const nova = await res.json();
+      setCategorias((prev) => [...prev, nova].sort((a, b) => a.nome.localeCompare(b.nome)));
+      setCategoriaId(nova.id);
+      setNovaCategoriaNome("");
+      setNovaCategoriaAberta(false);
+    }
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -80,6 +118,7 @@ export function TaskFormModal({
       titulo,
       descricao: descricao || null,
       setor,
+      categoriaId: categoriaId || null,
       responsavelId: responsavelId || null,
       prioridade,
       status,
@@ -137,6 +176,40 @@ export function TaskFormModal({
               ))}
             </Select>
           </Field>
+        </div>
+
+        <div>
+          <div className="mb-1.5 flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-600">Categoria</span>
+            <button
+              type="button"
+              onClick={() => setNovaCategoriaAberta((v) => !v)}
+              className="flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-800"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Nova categoria
+            </button>
+          </div>
+          <Select value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)}>
+            <option value="">Sem categoria</option>
+            {categorias.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nome}
+              </option>
+            ))}
+          </Select>
+          {novaCategoriaAberta && (
+            <div className="mt-2 flex gap-2">
+              <Input
+                placeholder="Nome da nova categoria"
+                value={novaCategoriaNome}
+                onChange={(e) => setNovaCategoriaNome(e.target.value)}
+              />
+              <Button type="button" variant="secondary" onClick={handleCriarCategoria}>
+                Adicionar
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-3 gap-4">
@@ -206,3 +279,4 @@ export function TaskFormModal({
     </Modal>
   );
 }
+
