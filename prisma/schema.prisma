@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // CDT Tarefas — Schema do banco de dados (PostgreSQL + Prisma)
 // Sistema de gestão de tarefas Comercial e Parcerias — Grupo CDT
 // ============================================================
@@ -447,4 +447,3 @@ model Notification {
   @@index([userId, lida])
   @@map("notifications")
 }
-
