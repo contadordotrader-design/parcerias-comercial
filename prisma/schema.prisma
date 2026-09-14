@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // CDT Tarefas — Schema do banco de dados (PostgreSQL + Prisma)
 // Sistema de gestão de tarefas Comercial e Parcerias — Grupo CDT
 // ============================================================
@@ -22,6 +22,14 @@ enum Setor {
   PARCERIAS
   DEMANDAS_RECEBIDAS
   GERAL
+}
+
+enum Recorrencia {
+  NENHUMA
+  DIARIA
+  SEMANAL
+  QUINZENAL
+  MENSAL
 }
 
 enum StatusTarefa {
@@ -210,6 +218,8 @@ model Task {
   clienteNome    String?
   observacoes    String?
   proximaAcao    String?
+  recorrencia    Recorrencia       @default(NENHUMA)
+  recorrenciaAte DateTime?
   dependeDeId    String?
   dependeDe      Task?             @relation("Dependencia", fields: [dependeDeId], references: [id])
   dependentes    Task[]            @relation("Dependencia")
@@ -437,3 +447,4 @@ model Notification {
   @@index([userId, lida])
   @@map("notifications")
 }
+

@@ -91,7 +91,14 @@ export function TasksBoard({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: novoStatus }),
     });
-    if (!res.ok) load();
+    if (!res.ok) {
+      load();
+      return;
+    }
+    const atualizada = await res.json();
+    if (atualizada.proximaOcorrenciaId) {
+      load();
+    }
   }
 
   return (
@@ -161,13 +168,6 @@ export function TasksBoard({
           <option value="AGUARDANDO_TERCEIRO">Aguardando terceiro</option>
           <option value="CONCLUIDO">Concluído</option>
           <option value="CANCELADO">Cancelado</option>
-        </Select>
-
-        <Select value={prioridade} onChange={(e) => setPrioridade(e.target.value)} className="w-auto">
-          <option value="">Todas as prioridades</option>
-          <option value="ALTA">Alta</option>
-          <option value="MEDIA">Média</option>
-          <option value="BAIXA">Baixa</option>
         </Select>
 
         {showCategoryFilter && (

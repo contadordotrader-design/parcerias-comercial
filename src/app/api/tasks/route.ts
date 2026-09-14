@@ -92,6 +92,8 @@ export async function POST(req: NextRequest) {
       clienteNome: data.clienteNome,
       observacoes: data.observacoes,
       proximaAcao: data.proximaAcao,
+      recorrencia: data.recorrencia,
+      recorrenciaAte: data.recorrenciaAte ? new Date(data.recorrenciaAte) : null,
     },
   });
 
@@ -105,3 +107,4 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json(task, { status: 201 });
 }
+

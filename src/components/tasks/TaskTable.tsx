@@ -3,7 +3,7 @@
 import { StatusBadge, PriorityBadge } from "@/components/tasks/Badges";
 import { TaskListItem } from "@/components/tasks/types";
 import { formatDate, isOverdue, SETOR_LABELS } from "@/lib/utils";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Repeat, Trash2 } from "lucide-react";
 
 export function TaskTable({
   tasks,
@@ -45,7 +45,12 @@ export function TaskTable({
             return (
               <tr key={task.id} className="hover:bg-slate-50/60">
                 <td className="max-w-xs px-4 py-3">
-                  <p className="truncate font-medium text-slate-800">{task.titulo}</p>
+                  <p className="flex items-center gap-1.5 truncate font-medium text-slate-800">
+                    {task.titulo}
+                    {task.recorrencia !== "NENHUMA" && (
+                      <Repeat className="h-3 w-3 shrink-0 text-slate-400" />
+                    )}
+                  </p>
                   {task.categoria && (
                     <p className="text-xs text-slate-400">{task.categoria.nome}</p>
                   )}

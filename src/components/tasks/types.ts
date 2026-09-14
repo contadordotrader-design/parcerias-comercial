@@ -9,6 +9,8 @@
   dataInicio: string | null;
   dataConclusao: string | null;
   proximaAcao: string | null;
+  recorrencia: "NENHUMA" | "DIARIA" | "SEMANAL" | "QUINZENAL" | "MENSAL";
+  recorrenciaAte: string | null;
   clienteNome: string | null;
   observacoes: string | null;
   responsavelId: string | null;

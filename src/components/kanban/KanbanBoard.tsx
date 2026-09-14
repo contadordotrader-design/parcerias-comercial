@@ -3,6 +3,7 @@
 import { PriorityBadge } from "@/components/tasks/Badges";
 import { TaskListItem } from "@/components/tasks/types";
 import { formatDate, isOverdue } from "@/lib/utils";
+import { Repeat } from "lucide-react";
 import { useState } from "react";
 
 const COLUNAS: { status: TaskListItem["status"]; titulo: string }[] = [
@@ -77,7 +78,12 @@ export function KanbanBoard({
                     onClick={() => onEdit(task)}
                     className="cursor-grab rounded-lg border border-slate-200 bg-white p-2.5 text-sm shadow-sm hover:border-slate-300 active:cursor-grabbing"
                   >
-                    <p className="font-medium text-slate-800">{task.titulo}</p>
+                    <p className="flex items-center gap-1.5 font-medium text-slate-800">
+                      {task.titulo}
+                      {task.recorrencia !== "NENHUMA" && (
+                        <Repeat className="h-3 w-3 shrink-0 text-slate-400" />
+                      )}
+                    </p>
                     {task.categoria && (
                       <p className="mt-0.5 text-xs text-slate-400">{task.categoria.nome}</p>
                     )}

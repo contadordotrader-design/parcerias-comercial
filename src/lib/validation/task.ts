@@ -16,6 +16,8 @@ export const taskInputSchema = z.object({
   clienteNome: z.string().optional().nullable(),
   observacoes: z.string().optional().nullable(),
   proximaAcao: z.string().optional().nullable(),
+  recorrencia: z.enum(["NENHUMA", "DIARIA", "SEMANAL", "QUINZENAL", "MENSAL"]).default("NENHUMA"),
+  recorrenciaAte: z.string().optional().nullable(),
 });
 
 export type TaskInput = z.infer<typeof taskInputSchema>;

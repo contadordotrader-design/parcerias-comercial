@@ -48,6 +48,8 @@ export function TaskFormModal({
   const [clienteNome, setClienteNome] = useState("");
   const [proximaAcao, setProximaAcao] = useState("");
   const [observacoes, setObservacoes] = useState("");
+  const [recorrencia, setRecorrencia] = useState<"NENHUMA" | "DIARIA" | "SEMANAL" | "QUINZENAL" | "MENSAL">("NENHUMA");
+  const [recorrenciaAte, setRecorrenciaAte] = useState("");
   const [saving, setSaving] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -66,6 +68,8 @@ export function TaskFormModal({
       setClienteNome(task.clienteNome ?? "");
       setProximaAcao(task.proximaAcao ?? "");
       setObservacoes(task.observacoes ?? "");
+      setRecorrencia(task.recorrencia ?? "NENHUMA");
+      setRecorrenciaAte(task.recorrenciaAte ? task.recorrenciaAte.slice(0, 10) : "");
     } else {
       setTitulo("");
       setDescricao("");
@@ -79,6 +83,8 @@ export function TaskFormModal({
       setClienteNome("");
       setProximaAcao("");
       setObservacoes("");
+      setRecorrencia("NENHUMA");
+      setRecorrenciaAte("");
     }
     setNovaCategoriaAberta(false);
     setNovaCategoriaNome("");
@@ -127,6 +133,8 @@ export function TaskFormModal({
       clienteNome: clienteNome || null,
       proximaAcao: proximaAcao || null,
       observacoes: observacoes || null,
+      recorrencia,
+      recorrenciaAte: recorrencia !== "NENHUMA" && recorrenciaAte ? recorrenciaAte : null,
     };
 
     const res = await fetch(isEdit ? `/api/tasks/${task!.id}` : "/api/tasks", {
@@ -264,6 +272,36 @@ export function TaskFormModal({
         <Field label="Observações">
           <Textarea rows={2} value={observacoes} onChange={(e) => setObservacoes(e.target.value)} />
         </Field>
+
+        <div className="grid grid-cols-2 gap-4 rounded-lg border border-slate-100 bg-slate-50/60 p-3">
+          <Field label="Repetir">
+            <Select
+              value={recorrencia}
+              onChange={(e) => setRecorrencia(e.target.value as typeof recorrencia)}
+            >
+              <option value="NENHUMA">Não repetir</option>
+              <option value="DIARIA">Todo dia</option>
+              <option value="SEMANAL">Toda semana</option>
+              <option value="QUINZENAL">A cada 15 dias</option>
+              <option value="MENSAL">Todo mês</option>
+            </Select>
+          </Field>
+          {recorrencia !== "NENHUMA" && (
+            <Field label="Repetir até (opcional)">
+              <Input
+                type="date"
+                value={recorrenciaAte}
+                onChange={(e) => setRecorrenciaAte(e.target.value)}
+              />
+            </Field>
+          )}
+        </div>
+        {recorrencia !== "NENHUMA" && (
+          <p className="-mt-2 text-xs text-slate-400">
+            Ao concluir esta tarefa, a próxima ocorrência é criada automaticamente com o prazo
+            ajustado.
+          </p>
+        )}
 
         {erro && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
 

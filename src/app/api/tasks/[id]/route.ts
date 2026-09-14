@@ -1,8 +1,28 @@
-import { requireUser } from "@/lib/api-auth";
+﻿import { requireUser } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { taskInputSchema } from "@/lib/validation/task";
 import { STATUS_LABELS } from "@/lib/utils";
+import { Recorrencia } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
+
+function proximaData(base: Date, recorrencia: Recorrencia): Date {
+  const proxima = new Date(base);
+  switch (recorrencia) {
+    case "DIARIA":
+      proxima.setDate(proxima.getDate() + 1);
+      break;
+    case "SEMANAL":
+      proxima.setDate(proxima.getDate() + 7);
+      break;
+    case "QUINZENAL":
+      proxima.setDate(proxima.getDate() + 14);
+      break;
+    case "MENSAL":
+      proxima.setMonth(proxima.getMonth() + 1);
+      break;
+  }
+  return proxima;
+}
 
 export async function GET(
   _req: NextRequest,
@@ -128,6 +148,10 @@ export async function PATCH(
       ...(data.clienteNome !== undefined && { clienteNome: data.clienteNome }),
       ...(data.observacoes !== undefined && { observacoes: data.observacoes }),
       ...(data.proximaAcao !== undefined && { proximaAcao: data.proximaAcao }),
+      ...(data.recorrencia !== undefined && { recorrencia: data.recorrencia }),
+      ...(data.recorrenciaAte !== undefined && {
+        recorrenciaAte: data.recorrenciaAte ? new Date(data.recorrenciaAte) : null,
+      }),
       ...(data.status === "CONCLUIDO" &&
         existing.status !== "CONCLUIDO" && { dataConclusao: new Date() }),
     },
@@ -137,7 +161,50 @@ export async function PATCH(
     await prisma.taskHistory.createMany({ data: historyEntries });
   }
 
-  return NextResponse.json(task);
+  // Tarefa recorrente: ao concluir, gera automaticamente a próxima ocorrência
+  // com o prazo avançado conforme a recorrência configurada.
+  let proximaOcorrencia = null;
+  if (
+    data.status === "CONCLUIDO" &&
+    existing.status !== "CONCLUIDO" &&
+    existing.recorrencia !== "NENHUMA"
+  ) {
+    const baseData = existing.prazo ?? new Date();
+    const novoPrazo = proximaData(baseData, existing.recorrencia);
+    const dentroDoLimite = !existing.recorrenciaAte || novoPrazo <= existing.recorrenciaAte;
+
+    if (dentroDoLimite) {
+      proximaOcorrencia = await prisma.task.create({
+        data: {
+          titulo: existing.titulo,
+          descricao: existing.descricao,
+          setor: existing.setor,
+          categoriaId: existing.categoriaId,
+          responsavelId: existing.responsavelId,
+          criadorId: existing.criadorId,
+          prioridade: existing.prioridade,
+          status: "PENDENTE",
+          prazo: novoPrazo,
+          parceiroId: existing.parceiroId,
+          clienteNome: existing.clienteNome,
+          observacoes: existing.observacoes,
+          proximaAcao: existing.proximaAcao,
+          recorrencia: existing.recorrencia,
+          recorrenciaAte: existing.recorrenciaAte,
+        },
+      });
+
+      await prisma.taskHistory.create({
+        data: {
+          taskId: proximaOcorrencia.id,
+          autorId: user!.id,
+          acao: `criada automaticamente como recorrência de "${existing.titulo}"`,
+        },
+      });
+    }
+  }
+
+  return NextResponse.json({ ...task, proximaOcorrenciaId: proximaOcorrencia?.id });
 }
 
 export async function DELETE(
@@ -152,3 +219,4 @@ export async function DELETE(
 
   return NextResponse.json({ ok: true });
 }
+
