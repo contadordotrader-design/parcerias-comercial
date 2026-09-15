@@ -1,10 +1,13 @@
-﻿"use client";
+"use client";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { StatusBadge, PriorityBadge } from "@/components/tasks/Badges";
 import { PartnerFormModal } from "@/components/partners/PartnerFormModal";
 import { MeetingFormModal } from "@/components/meetings/MeetingFormModal";
+import { ActionFormModal } from "@/components/partners/ActionFormModal";
+import { MaterialFormModal } from "@/components/partners/MaterialFormModal";
+import { CommissionFormModal } from "@/components/partners/CommissionFormModal";
 import {
   SEGMENTO_LABELS,
   STATUS_PARCEIRO_LABELS,
@@ -71,6 +74,9 @@ export default function ParceiroDetailPage() {
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
   const [meetingOpen, setMeetingOpen] = useState(false);
+  const [actionOpen, setActionOpen] = useState(false);
+  const [materialOpen, setMaterialOpen] = useState(false);
+  const [commissionOpen, setCommissionOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -155,7 +161,18 @@ export default function ParceiroDetailPage() {
       </Section>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Section title="Ações em conjunto">
+        <Section
+          title="Ações em conjunto"
+          action={
+            <button
+              onClick={() => setActionOpen(true)}
+              className="flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-800"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Nova ação
+            </button>
+          }
+        >
           {partner.acoes.length === 0 ? (
             <EmptyRow text="Nenhuma ação registrada." />
           ) : (
@@ -198,7 +215,18 @@ export default function ParceiroDetailPage() {
           )}
         </Section>
 
-        <Section title="Materiais">
+        <Section
+          title="Materiais"
+          action={
+            <button
+              onClick={() => setMaterialOpen(true)}
+              className="flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-800"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Novo material
+            </button>
+          }
+        >
           {partner.materiais.length === 0 ? (
             <EmptyRow text="Nenhum material em produção." />
           ) : (
@@ -213,7 +241,18 @@ export default function ParceiroDetailPage() {
           )}
         </Section>
 
-        <Section title="Comissões">
+        <Section
+          title="Comissões"
+          action={
+            <button
+              onClick={() => setCommissionOpen(true)}
+              className="flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-800"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Nova comissão
+            </button>
+          }
+        >
           {partner.comissoes.length === 0 ? (
             <EmptyRow text="Nenhuma comissão registrada." />
           ) : (
@@ -260,6 +299,27 @@ export default function ParceiroDetailPage() {
         }}
         parceiroId={partner.id}
       />
+
+      <ActionFormModal
+        open={actionOpen}
+        onClose={() => setActionOpen(false)}
+        onSaved={load}
+        parceiroId={partner.id}
+      />
+
+      <MaterialFormModal
+        open={materialOpen}
+        onClose={() => setMaterialOpen(false)}
+        onSaved={load}
+        parceiroId={partner.id}
+      />
+
+      <CommissionFormModal
+        open={commissionOpen}
+        onClose={() => setCommissionOpen(false)}
+        onSaved={load}
+        parceiroId={partner.id}
+      />
     </div>
   );
 }
@@ -296,4 +356,3 @@ function Section({
 function EmptyRow({ text }: { text: string }) {
   return <p className="py-6 text-center text-sm text-slate-400">{text}</p>;
 }
-
